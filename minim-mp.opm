@@ -1,0 +1,7 @@
+% optex-minim package
+% Michal Vlasák <lahcim8@gmail.com>
+% https://github.com/vlasakm/pdfextra
+% Zero-Clause BSD license
+
+\load[minim]
+\input minim-mp

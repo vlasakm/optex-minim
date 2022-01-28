@@ -1,0 +1,197 @@
+% optex-minim package
+% Michal Vlasák <lahcim8@gmail.com>
+% https://github.com/vlasakm/optex-minim
+% Zero-Clause BSD license
+
+\_def\_optexminim_version{0.1}
+\_codedecl \optexminim_loaded  {Minim compatibility for \OpTeX/ (v\_optexminim_version)}
+
+   \_doc
+\def\eTeX{$\varepsilon$-\TeX}
+   When we want to use minim with \OpTeX/, we need to accomodate for their
+   differences in allocations. This package tries to do that in a way that
+   works, but is not necessarily the nicest -- this are really core routines we
+   are talking about, and both formats have their own ways, which in certain
+   parts (don't) try to keep backwards compatibility with older \TeX/ formats.
+
+   \OpTeX/ defines most allocation macros in `alloc.opm` and some Lua
+   allocation functions in `optex.lua`. Minim \"packages" are not standalone,
+   they all depend on core routines defined in `minim-alloc.tex` and
+   `minim-alloc.lua` respectively. Minim as a format preloads a stripped
+   version of `etex.src` so the Lua code makes some assumptions about that
+   (i.e. expects local allocators).
+
+   Because we only change what is defined by others, we actually need a dummy
+   macro for `\_codedecl`.
+   \_cod
+
+% dummy macro to signalize that we are loaded
+\_let\optexminim_loaded=\empty
+
+   \_doc
+   In general, there are four allocator types expected by minim:
+
+   \begitems
+   * Knuth allocators from `plain.tex` (like `\newcount`). These are already
+   defined by \OpTeX/ (except for `\newlanguage`, which doesn't concern us).
+   Although minim patches `\newbox` and expects the old `\allocationnumber`
+   be allocated and used.
+
+   * Global allocators from `etex.src` (like `\globcount`). These are not
+   defined by \OpTeX/, since they no longer make sense (\LuaTeX/ doesn't use
+   sparse arrays for registers). Minim defines them to be the classic Knuth
+   allocators if it doesn't find them on the TeX side, but expects them from
+   the Lua side.
+
+   * Local allocators from `etex.src` (like `\loccount`). Concept of local
+   allocators is completely missing in \OpTeX/. The semantics of local
+   allocation in Lua is weird too, so we try to avoid these, since minim also
+   doesn't use them.
+
+   * \LuaTeX/ allocators from `ltluatex.tex` (like `\newattribute`). Subset of
+   these is in \OpTeX/ (only atributes, which are also allocatable in Lua, and
+   catcode tables). But minim tries to be compatible with \LaTeX/ and patches
+   its routines if it detects them.
+   \enditems
+
+   Before actually loading `minim-alloc`, we need to allocate the expected
+   `allocationnumber` and actually set it on each allocation. For this we patch
+   the \OpTeX/ allocator. While at it, we also hook in minim's allocation
+   remembering. This is the reason why it redefines `\newbox`, so with this
+   change to the allocator, we can still use our old `\newbox`. A dummy
+   `\minim:rememberalloc` is defined to be used until minim has its own in
+   place.
+   \_cod
+
+% minim uses the old "\allocationnumber"
+\_newcount\allocationnumber
+
+% patch in \allocation number and \minim:rememberalloc to OpTeX \_allocator
+\_let\_optexallocator=\_allocator
+\_bgroup
+   \_catcode`\:=11
+   \_gdef\minim:rememberalloc#1#2{}%
+   \_gdef\_allocator #1#2#3{%
+      \_optexallocator{#1}{#2}{#3}%
+      \_global\allocationnumber=\_cs{_#2alloc}%
+      \minim:rememberalloc{\_csstring#2}{\_csstring#1}%
+   }
+\_egroup
+
+   \_doc
+   For defining \TeX/ commands implemented in Lua, \OpTeX/ has
+   `define_lua_command`, which actually does the allocation and definition at
+   the same time, and allows to do so only from Lua end.
+
+   Historically (in my opinion unfortunately) \LaTeX/ made the allocations of
+   these functions available from \TeX/ end, and the \"lua define" operation is
+   thus a two step process which involves synchronization with \TeX/.
+
+   `minim-alloc` actually defines a `luadef` function which is like
+   `define_lua_command`, but is backed by the minim allocator. To make this
+   work, we just need to set the \LaTeX/ register to the index of last
+   allocated function, since it allocates at counter plus one. Then minim will
+   start where \OpTeX/ stopped, and we will later define `define_lua_command`
+   to be just minim's `luadef`.
+
+   We tell the number of allocated function by going through the table of
+   actually used functions. This is not that robust, because while
+   `define_lua_command` allocates sequentially, the provided functions may be
+   `nil`, which breaks the code below.
+   \_cod
+
+% for synchronisation of allocated Lua functions
+\_ea\_newcount\_csname e@alloc@luafunction@count\_endcsname
+
+\directlua{
+    local function_table = lua.get_functions_table()
+    local i = 1
+    while function_table[i] ~= nil do
+        i = i + 1
+    end
+    % minim allocates at count + 1 for "new" allocators
+    tex.setcount("global", "e@alloc@luafunction@count", i - 1)
+}
+
+   \_doc
+   The preparations are over. We load `minim-alloc.tex`.
+   \_cod
+
+\input minim-alloc
+
+   \_doc
+   On the \TeX/ side, we need to repair `\newbox`, which minim redefines so
+   that it \"calls back" to Lua for remembering the allocation there.
+   Unfortunately, it uses the \eTeX/ `\globcount` definition for that, which is
+   wrong in \OpTeX/. We already dealt with remembering allocations by patching
+   the allocator.
+   \_cod
+
+\_let\newbox=\_newbox
+
+   \_doc
+   By now, the Knuthian allocators are dealt with. \eTeX/ global and local
+   allocators are still undefined, but are expected in minim's Lua code with
+   their hardcoded counter register numbers. This is unacceptable, since in
+   this range (`\count260` to `\count276`) \OpTeX/ has already made
+   allocations. Thus we need to replace these Lua functions with similar
+   definitions. For some, \OpTeX/ also has a different idea whether the counter
+   represent the last or next allocated register number, so we correct that as
+   well.
+
+   We simply delete minim's Lua functions for local allocations. It actually
+   doesn't use them (just like in the \TeX/ case) and the semantics are just
+   weird, so it is easier to simply get rid of them, and not implement them.
+
+   We also don't forget to actually set `define_lua_command` to be minim's `luadef`.
+   \_cod
+
+\directlua{
+    local minimalloc = require("minim-alloc")
+
+    luatexbase.reinstall()
+    define_lua_command = minimalloc.luadef
+
+    % these are allocators already defined in OpTeX that we need to repair
+    local toreplace = {
+        count = true,
+        dimen = true,
+        skip = true,
+        muskip = true,
+        box = true,
+        toks = true,
+        marks = true,
+        attribute = true,
+        catcodetable = true,
+    }
+
+    for fname, f in pairs(minimalloc) do
+        if type(f) == "function" then
+            local type, alloc = fname:match("(\_pcent g+)_(\_pcent g+)")
+            if type_ == "local" then
+                % delete all allocators like "local_count", etc.
+                alloc.fname = nil
+            elseif type == "new" and toreplace[alloc] then
+                % use OpTeX counters for "new_count", etc.
+                local countername = string.format("_\_pcent salloc", alloc)
+                local upname, allocations = debug.getupvalue(f, 1)
+                assert(upname == "allocations", "this package needs update, alert the maintainer")
+                minimalloc[fname] = function (id)
+                    local nr
+                    if id and allocations[alloc][id] then
+                        nr = allocations[alloc][id]
+                    else
+                        nr = tex.count[countername] + 1
+                        tex.setcount('global', countername, nr)
+                        if id then allocations[alloc][id] = nr end
+                        minimalloc.log(
+                            "\_nbb\_pcent s\_pcent d : \_pcent s", alloc, nr, id or "<unnamed>")
+                    end
+                    return nr
+                end
+            end
+        end
+    end
+}
+
+\_endcode
