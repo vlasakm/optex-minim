@@ -149,7 +149,7 @@
 \directlua{
     local minimalloc = require("minim-alloc")
 
-    luatexbase.reinstall()
+    luatexbase.reinstall(minimalloc.register)
     define_lua_command = minimalloc.luadef
 
     % these are allocators already defined in OpTeX that we need to repair
