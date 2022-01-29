@@ -130,6 +130,18 @@
 \_let\newbox=\_newbox
 
    \_doc
+   Both \LaTeX/ and the minim inspired catcode table allocators initialize the
+   catcode tables with `\initcatcodetable` (i.e. ini\TeX/ catcodes). \OpTeX/
+   merely allocates the registers. \LuaTeX/ doesn't allow to activate
+   unitialized catcode table, therefore activation with either
+   `\initcatcodetable` or `\savecatcodetable` is necessary before use. To
+   ensure compatibility with foreign macros, we also issue `\initcatcodetable`
+   on allocation in the public version of `\newcatcodetable`.
+   \_cod
+
+\_def\newcatcodetable#1{\_newcatcodetable#1\_initcatcodetable#1}
+
+   \_doc
    By now, the Knuthian allocators are dealt with. \eTeX/ global and local
    allocators are still undefined, but are expected in minim's Lua code with
    their hardcoded counter register numbers. This is unacceptable, since in
