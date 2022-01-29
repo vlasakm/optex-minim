@@ -176,7 +176,7 @@
                 local countername = string.format("_\_pcent salloc", alloc)
                 local upname, allocations = debug.getupvalue(f, 1)
                 assert(upname == "allocations", "this package needs update, alert the maintainer")
-                minimalloc[fname] = function (id)
+                minimalloc[fname] = function(id)
                     local nr
                     if id and allocations[alloc][id] then
                         nr = allocations[alloc][id]
