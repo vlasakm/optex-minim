@@ -1,0 +1,70 @@
+\ifdefined\optexversion
+  \fontfam[lm]
+\else
+  \input luaotfload.sty
+\fi
+
+
+\directlua{
+luatexbase.add_to_callback("wrapup_run", function() print("wrapup_run_1") end, "1")
+}
+
+\ifdefined\optexversion
+  \load[minim-mp]
+\else
+  \input minim-mp
+\fi
+
+\directlua{luatexbase.create_callback("cb1", "simple")}
+\directlua{luatexbase.add_to_callback("cb1", function(...) print("cb1 1", ...) end, "a")}
+\directlua{luatexbase.add_to_callback("cb1", function(...) print("cb1 2", ...) end, "b")}
+\directlua{luatexbase.call_callback("cb1", 1, 2, 3, 4)}
+
+% check if mlist_to_hlist callback calls pre/post filters
+\directlua{
+print()
+luatexbase.add_to_callback("pre_mlist_to_hlist_filter", function()
+	print("pre_mlist_to_hlist_filter called")
+	return true
+end, "pre")
+
+luatexbase.add_to_callback("post_mlist_to_hlist_filter", function()
+	print("post_mlist_to_hlist_filter called")
+	return true
+end, "post")
+}
+
+$$ a \quad \int_a^b $$
+
+\directlua{luatexbase.add_to_callback("mlist_to_hlist", node.mlist_to_hlist, "node")}
+
+\mathsboff
+
+\def\int_a{a}
+
+$$ b \quad \int_a^b $$
+
+\mathsbon
+
+\directlua{luatexbase.remove_from_callback("mlist_to_hlist", "node")}
+
+$$c$$
+
+\directlua{
+luatexbase.remove_from_callback("pre_mlist_to_hlist_filter", "pre")
+luatexbase.remove_from_callback("post_mlist_to_hlist_filter", "post")
+}
+
+\directlua{
+local desc = luatexbase.callback_descriptions("define_font")[1]
+local define_font = luatexbase.remove_from_callback("define_font", desc)
+luatexbase.add_to_callback("define_font", define_font, desc)
+}
+
+\directlua{
+require("minim-callbacks").register("wrapup_run", function() print("wrapup_run_2") end)
+luatexbase.remove_from_callback("wrapup_run", "1")
+luatexbase.add_to_callback("wrapup_run", function() print("wrapup_run_3") end, "3")
+}
+
+\bye
