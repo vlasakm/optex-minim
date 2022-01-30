@@ -40,8 +40,8 @@
    \begitems
    * Knuth allocators from `plain.tex` (like `\newcount`). These are already
    defined by \OpTeX/ (except for `\newlanguage`, which doesn't concern us).
-   Although minim patches `\newbox` and expects the old `\allocationnumber`
-   be allocated and used.
+   Although minim itself sets the old `\allocationnumber` counter, which is not
+   even defined in \OpTeX/.
 
    * Global allocators from `etex.src` (like `\globcount`). These are not
    defined by \OpTeX/, since they no longer make sense (\LuaTeX/ doesn't use
@@ -60,31 +60,6 @@
    its routines if it detects them.
    \enditems
 
-   Before actually loading `minim-alloc`, we need to allocate the expected
-   `allocationnumber` and actually set it on each allocation. For this we patch
-   the \OpTeX/ allocator. While at it, we also hook in minim's allocation
-   remembering. This is the reason why it redefines `\newbox`, so with this
-   change to the allocator, we can still use our old `\newbox`. A dummy
-   `\minim:rememberalloc` is defined to be used until minim has its own in
-   place.
-   \_cod
-
-% minim uses the old "\allocationnumber"
-\_newcount\allocationnumber
-
-% patch in \allocation number and \minim:rememberalloc to OpTeX \_allocator
-\_let\_optexallocator=\_allocator
-\_bgroup
-   \_catcode`\:=11
-   \_gdef\minim:rememberalloc#1#2{}%
-   \_gdef\_allocator #1#2#3{%
-      \_optexallocator{#1}{#2}{#3}%
-      \_global\allocationnumber=\_cs{_#2alloc}%
-      \minim:rememberalloc{#2}{\_csstring#1}%
-   }
-\_egroup
-
-   \_doc
    For defining \TeX/ commands implemented in Lua, \OpTeX/ has
    `define_lua_command`, which actually does the allocation and definition at
    the same time, and allows to do so only from Lua end.
@@ -105,6 +80,8 @@
    `define_lua_command` allocates sequentially, the provided functions may be
    `nil`, which breaks the code below.
    \_cod
+
+\_newcount\allocationnumber
 
 % for synchronisation of allocated Lua functions
 \_ea\_newcount\_csname e@alloc@luafunction@count\_endcsname
@@ -194,16 +171,6 @@
 \input minim-alloc
 
    \_doc
-   On the \TeX/ side, we need to repair `\newbox`, which minim redefines so
-   that it \"calls back" to Lua for remembering the allocation there.
-   Unfortunately, it uses the \eTeX/ `\globcount` definition for that, which is
-   wrong in \OpTeX/. We already dealt with remembering allocations by patching
-   the allocator.
-   \_cod
-
-\_let\newbox=\_newbox
-
-   \_doc
    Both \LaTeX/ and the minim inspired catcode table allocators initialize the
    catcode tables with `\initcatcodetable` (i.e. ini\TeX/ catcodes). \OpTeX/
    merely allocates the registers. \LuaTeX/ doesn't allow to activate
@@ -243,42 +210,32 @@
 
     % these are allocators already defined in OpTeX that we need to repair
     local toreplace = {
-        count = true,
-        dimen = true,
-        skip = true,
-        muskip = true,
-        box = true,
-        toks = true,
-        marks = true,
-        attribute = true,
-        catcodetable = true,
+        "count",
+        "dimen",
+        "skip",
+        "muskip",
+        "box",
+        "toks",
+        "marks",
+        "attribute",
+        "catcodetable",
     }
 
-    for fname, f in pairs(minimalloc) do
-        if type(f) == "function" then
-            local type, alloc = fname:match("(\_pcent g+)_(\_pcent g+)")
-            if type_ == "local" then
-                % delete all allocators like "local_count", etc.
-                alloc.fname = nil
-            elseif type == "new" and toreplace[alloc] then
-                % use OpTeX counters for "new_count", etc.
-                local countername = string.format("_\_pcent salloc", alloc)
-                local upname, allocations = debug.getupvalue(f, 1)
-                assert(upname == "allocations", "this package needs update, alert the maintainer")
-                minimalloc[fname] = function(id)
-                    local nr
-                    if id and allocations[alloc][id] then
-                        nr = allocations[alloc][id]
-                    else
-                        nr = tex.count[countername] + 1
-                        tex.setcount('global', countername, nr)
-                        if id then allocations[alloc][id] = nr end
-                        minimalloc.log(
-                            "\_nbb\_pcent s\_pcent d : \_pcent s", alloc, nr, id or "<unnamed>")
-                    end
-                    return nr
+    for _, alloc in ipairs(toreplace) do
+        local cache = {}
+        local countername = string.format("_\_pcent salloc", alloc)
+        minimalloc["new_"..alloc] = function(id)
+            local n = cache[id]
+            if not n then
+                n = tex.getcount(countername) + 1
+                tex.setcount("global", countername, n)
+                if id then
+                    cache[id] = n
                 end
+                minimalloc.log(
+                    "\_nbb\_pcent s\_pcent d : \_pcent s", alloc, n, id or "<unnamed>")
             end
+            return n
         end
     end
 }
