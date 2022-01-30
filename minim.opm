@@ -74,7 +74,7 @@
    \_gdef\_allocator #1#2#3{%
       \_optexallocator{#1}{#2}{#3}%
       \_global\allocationnumber=\_cs{_#2alloc}%
-      \minim:rememberalloc{\_csstring#2}{\_csstring#1}%
+      \minim:rememberalloc{#2}{\_csstring#1}%
    }
 \_egroup
 
