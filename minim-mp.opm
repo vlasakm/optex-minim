@@ -3,5 +3,14 @@
 % https://github.com/vlasakm/pdfextra
 % Zero-Clause BSD license
 
-\load[minim]
-\input minim-mp
+\_codedecl \_optexminimmp_used {Minim-PDF for \OpTeX/}
+\_namespace{optexminimmp}
+
+\_def\_optexminimmp_used{}
+
+\_load[minim]
+
+\_input minim-mp
+
+\_endnamespace
+\_endcode

@@ -7,7 +7,6 @@
 \_codedecl \optexminim_loaded  {Minim compatibility for \OpTeX/ (v\_optexminim_version)}
 
    \_doc
-\def\eTeX{$\varepsilon$-\TeX}
    When we want to use minim with \OpTeX/, we need to accomodate for their
    differences in allocations and callbacks. This package tries to do that in a
    way that works, but is not necessarily the nicest -- this are really core
@@ -240,4 +239,20 @@
     end
 }
 
+   \_doc
+   We also need to do something about `minim-hooks.tex`, which hooks into
+   `\shipout`, but the default \OpTeX/ output routine (and perhaps also the
+   user ones) use `\_shipout`.
+
+   Minim also adds to `\everypar`, but that is fine.
+   \_cod
+
+\_let\shipout\_shipout
+
+\input minim-hooks
+
+\_catcode`\:=11
+\_let\_shipout\minim:shipout:new
+
+% catcodes changes don't propage, since this file is loaded with \opinput
 \_endcode

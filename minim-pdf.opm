@@ -1,0 +1,78 @@
+% optex-minim package
+% Michal Vlasák <lahcim8@gmail.com>
+% https://github.com/vlasakm/pdfextra
+% Zero-Clause BSD license
+
+\_codedecl \_optexminimpdf_uselang {Minim-PDF for \OpTeX/}
+\_namespace{optexminimpdf}
+
+   \_doc
+   Before loading `minim-pdf` we do a few preparations.
+
+   Minim hooks into language mechanism with standard \eTeX/
+   `\uselanguage@hook`. \OpTeX/ doesn't have the hook, so we add it.
+   \_cod
+
+\_load[minim]
+
+\_def\_uselanguage@hook#1{}
+\_let\.uselang=\_uselang
+\_def\_uselang#1#2#3#4{%
+   \.uselang{#1}{#2}{#3}{#4}
+   \_ea\_uselanguage@hook\_expanded{{\_cs{_nlan:#1}}}
+}
+
+   \_doc
+   If not detected, a few \"dummy" languages would be (in erroneous ways)
+   defined by minim: like \"nohyph" and \"undetermined". We define a few dummy
+   control sequences, to make minim not define them, since we define them
+   ourselves below. They are used in standard way, but their \"ISO codes" are weird:
+
+   \begtt
+   \nohyphlang
+   \nolanglang
+   \uncodedlang
+   \undeterminedlang
+   \endtt
+   \_cod
+
+\_catcode`\@=11
+\_def\_tmp{}
+\_let\lang@nohyph=\_tmp
+\_let\lang@nolang=\_tmp
+\_let\lang@uncoded=\_tmp
+\_let\lang@undetermined=\_tmp
+
+% OpTeX doesn't use language numbers up until 100, so we start at
+% 20 (leave a few for temporary assignments, like usual)
+\_preplang nohyph       nohyph       {} 1 11
+\_preplang nolang       nolang       {} 2 11
+\_preplang uncoded      uncoded      {} 3 11
+\_preplang undetermined undetermined {} 4 11
+
+   \_doc
+   Now we actually load `minim-pdf`.
+   \_cod
+
+\_input minim-pdf
+
+   \_doc
+   Users aren't supposed to define custom languages in \OpTeX/, forbid that.
+   \_cod
+
+\_def\_tmp{\errmessage{don't use this command with OpTeX}}
+\_let\newnamedddialect=\_tmp
+\_let\newnameddllanguage=\_tmp
+
+   \_doc
+   Since a language may already be set (at least the default Knuth english),
+   then we need to tell minim about it, by reexecuting the language command
+   (like `\enlang`), thus calling into minim through the above mentioned hook.
+   \_cod
+
+% set the current language again to let minim know what it is
+\_cs{\_cs{_lan:\_the\_language}lang}
+
+% catcodes changes don't propage, since this file is loaded with \opinput
+\_endnamespace
+\_endcode
