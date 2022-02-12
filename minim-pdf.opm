@@ -15,11 +15,13 @@
 
 \_load[minim]
 
-\_def\_uselanguage@hook#1{}
+\_catcode`\@=11
+
+\_def\uselanguage@hook#1{}
 \_let\.uselang=\_uselang
 \_def\_uselang#1#2#3#4{%
    \.uselang{#1}{#2}{#3}{#4}
-   \_ea\_uselanguage@hook\_expanded{{\_cs{_nlan:#1}}}
+   \_ea\uselanguage@hook\_expanded{{\_cs{_nlan:#1}}}
 }
 
    \_doc
@@ -36,7 +38,6 @@
    \endtt
    \_cod
 
-\_catcode`\@=11
 \_def\_tmp{}
 \_let\lang@nohyph=\_tmp
 \_let\lang@nolang=\_tmp
