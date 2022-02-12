@@ -30,6 +30,7 @@
    macro for `\_codedecl`.
    \_cod
 
+\_catcode`\@=11
 % dummy macro to signalize that we are loaded
 \_let\optexminim_loaded=\empty
 
@@ -161,6 +162,17 @@
     end
 
     callback.luatexbase = lb
+}
+   \_doc
+   Minim hooks into language mechanism with standard \eTeX/
+   `\uselanguage@hook`. \OpTeX/ doesn't have the hook, so we add it.
+   \_cod
+
+\_def\uselanguage@hook#1{}
+\_let\.uselang=\_uselang
+\_def\_uselang#1#2#3#4{%
+   \.uselang{#1}{#2}{#3}{#4}
+   \_ea\uselanguage@hook\_expanded{{\_cs{_nlan:#1}}}
 }
 
    \_doc

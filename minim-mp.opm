@@ -6,7 +6,7 @@
 \_codedecl \_optexminimmp_used {Minim-PDF for \OpTeX/}
 \_namespace{optexminimmp}
 
-\_def\_optexminimmp_used{}
+\_def\.used{}
 
 \_load[minim]
 

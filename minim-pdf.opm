@@ -3,26 +3,17 @@
 % https://github.com/vlasakm/pdfextra
 % Zero-Clause BSD license
 
-\_codedecl \_optexminimpdf_uselang {Minim-PDF for \OpTeX/}
+\_codedecl \nohyphlang {Minim-PDF for \OpTeX/}
 \_namespace{optexminimpdf}
 
    \_doc
-   Before loading `minim-pdf` we do a few preparations.
-
-   Minim hooks into language mechanism with standard \eTeX/
-   `\uselanguage@hook`. \OpTeX/ doesn't have the hook, so we add it.
+   Before loading `minim-pdf` we do a few preparations. Most importantly
+   adjusting core of minim, which is done in `minim.opm`.
    \_cod
 
 \_load[minim]
 
 \_catcode`\@=11
-
-\_def\uselanguage@hook#1{}
-\_let\.uselang=\_uselang
-\_def\_uselang#1#2#3#4{%
-   \.uselang{#1}{#2}{#3}{#4}
-   \_ea\uselanguage@hook\_expanded{{\_cs{_nlan:#1}}}
-}
 
    \_doc
    If not detected, a few \"dummy" languages would be (in erroneous ways)
