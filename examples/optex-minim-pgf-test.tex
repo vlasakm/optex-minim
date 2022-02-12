@@ -1,0 +1,156 @@
+\fontfam[lm]
+\load[tikz]
+\load[minim-mp]
+
+%\tracingall
+%\pdfcompresslevel=0
+%\pdfobjcompresslevel=0
+
+\directlua{
+local node_id  = node.id
+local glyph_id = node_id("glyph")
+local rule_id  = node_id("rule")
+local glue_id  = node_id("glue")
+local hlist_id = node_id("hlist")
+local vlist_id = node_id("vlist")
+local disc_id  = node_id("disc")
+
+local direct       = node.direct
+local todirect     = direct.todirect
+local tonode       = direct.tonode
+local getfield     = direct.getfield
+local setfield     = direct.setfield
+local getlist      = direct.getlist
+local setlist      = direct.setlist
+local getleader    = direct.getleader
+local getattribute = direct.get_attribute
+local insertbefore = direct.insert_before
+local copy         = direct.copy
+local traverse     = direct.traverse
+
+local token_getmacro = token.get_macro
+
+local pdfliteral = optex.directpdfliteral
+
+function register_pre_shipout_injector(name, attribute, namespace, default)
+    local current
+    local default = default or 0
+    local function injector(head)
+        for n, id, subtype in traverse(head) do
+            if id == hlist_id or id == vlist_id then
+                % nested list, just recurse
+                setlist(n, injector(getlist(n)))
+            elseif id == disc_id then
+                % only replace part is interesting at this point
+                local replace = getfield(n, "replace")
+                if replace then
+                    setfield(n, "replace", injector(replace))
+                end
+            elseif id == glyph_id or id == rule_id
+                    or (id == glue_id and getleader(n)) then
+                local new = getattribute(n, attribute) or 0
+                if new ~= current then
+                    local literal = token_getmacro(namespace..new)
+                    head = insertbefore(head, n, pdfliteral(literal))
+                    current = new
+                end
+            end
+        end
+        return head
+    end
+
+    callback.add_to_callback("pre_shipout_filter", function(list)
+        current = default
+        return tonode(injector(todirect(list)))
+    end, name)
+end
+}
+
+
+\newattribute \transpattr
+\newcount \transpcnt \transpcnt=1 % allocations start at 1
+\def\transparency#1{\inittransparency \transpattr=
+   \ifcsname transp::#1\endcsname \lastnamedcs\relax \else
+      \transpcnt
+      \sxdef{transp::#1}{\the\transpcnt}%
+      \sxdef{transp:\the\transpcnt}{/Tr\the\transpcnt\space gs}%
+      \addextgstate{Tr\the\transpcnt}{<</ca #1 /CA #1>>}%
+      \incr \transpcnt
+   \fi
+}
+\addto\_resetcolor{\transpattr=-"7FFFFFFF }
+% Transparency of "1" is the default
+\sdef{transp::1}{0}
+\sdef{transp:0}{/Tr0 gs}
+\def\inittransparency{%
+   \addextgstate{Tr0}{<</ca 1 /CA 1>>}%
+   \glet\inittransparency=\relax
+}
+\directlua{
+register_pre_shipout_injector("transp", registernumber("transpattr"), "transp:")
+}
+
+\newattribute \fntoutattr
+\newcount \fntoutcnt \fntoutcnt=1 % allocations start at 1
+\def\outlinefont#1{\fntoutattr=
+   \ifcsname fntout::#1\endcsname \lastnamedcs\relax \else
+      \fntoutcnt
+      \sxdef{fntout::#1}{\the\fntoutcnt}%
+      \sxdef{fntout:\the\fntoutcnt}{#1 w 1 Tr}%
+      \incr \fntoutcnt
+   \fi
+}
+\addto\_resetcolor{\fntoutattr=-"7FFFFFFF }
+\sdef{fntout:0}{0 w 0 Tr}
+\directlua{
+register_pre_shipout_injector("fntout", registernumber("fntoutattr"), "fntout:")
+}
+
+a{\transparency{.5}b{\transparency{.2}c}b}a
+
+{\Red a{A\outlinefont{.1}B\pdfliteral{0 1 0 RG}\outlinefont{.3}B}a}
+
+\inoval[\shadow=3]{abc}
+
+% From PGF manual, section 23.2 "Specifying a Uniform Opacity"
+\tikzpicture[line width=1ex]
+\draw (0,0) -- (3,1);
+%\filldraw [fill=yellow!80!black,draw opacity=0.5] (1,0) rectangle (2,1);
+\filldraw [fill=yellow!80!black,draw opacity=0.5] (1,0) rectangle (2,1);
+\endtikzpicture
+
+% From PGF manual, section 17.13.2 "Referencing the Current Page Node - Absolute Positioning"
+\tikzpicture [remember picture,overlay]
+\draw [line width=1mm,opacity=.25] (current page.center) circle (3cm);
+\endtikzpicture
+
+\directmetapost{
+% define the pattern
+picture letter; letter = maketext("a");
+beginpattern(a)
+    draw letter rotated 45;
+    matrix = identity rotated 45;
+endpattern(12pt,12pt);
+% use the pattern
+beginfig(1)
+    fill fullcircle scaled 3cm withpattern(a) withcolor 3/4red;
+    draw fullcircle scaled 3cm withpen pencircle scaled 1;
+endfig;
+}
+
+\vfil\break
+\slides
+\slideshow
+
+\sec A
+
+\layers 3
+{\pshow2 Second text.} {\pshow3 Third text.} {\pshow1 First text.}
+\endlayers
+
+* a \pg+
+* b \pg+
+* c \pg+
+* d
+
+\bye
