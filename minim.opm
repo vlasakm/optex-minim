@@ -203,10 +203,6 @@
    represent the last or next allocated register number, so we correct that as
    well.
 
-   We simply delete minim's Lua functions for local allocations. It actually
-   doesn't use them (just like in the \TeX/ case) and the semantics are just
-   weird, so it is easier to simply get rid of them, and not implement them.
-
    We also don't forget to actually set `define_lua_command` to be minim's
    `luadef` and to restore the `luatexbase` namespace.
    \_cod
