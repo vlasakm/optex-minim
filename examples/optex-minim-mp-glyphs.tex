@@ -1,0 +1,31 @@
+\fontfam[lm]
+\load[minim-mp]
+
+\directmetapost{%
+beginfig(1)
+picture q;
+path p;
+interim ahlength := 12bp;
+interim ahangle := 25;
+q := glyph "Dcaron" of "_tenrm" scaled 50;
+for item within q:
+  p := pathpart item;
+  drawarrow p withcolor (.6,.9,.6)
+      withpen pencircle scaled 1.5;
+  for j=0 upto length p:
+    pickup pencircle scaled .7;
+    draw (point j of p -- precontrol j of p)
+        dashed evenly withcolor blue;
+    draw (point j of p -- postcontrol j of p)
+        dashed evenly withcolor blue;
+    pickup pencircle scaled 3;
+    draw precontrol j of p withcolor red;
+    draw postcontrol j of p withcolor red;
+    pickup pencircle scaled 2;
+    draw point j of p withcolor black;
+  endfor
+endfor
+endfig;
+}
+
+\bye
