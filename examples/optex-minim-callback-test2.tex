@@ -1,0 +1,23 @@
+\ifdefined\optexversion
+  \fontfam[lm]
+\else
+  \input luaotfload.sty
+\fi
+
+\directlua{
+luatexbase.add_to_callback("wrapup_run", function() print("wrapup_run_1") end, "1")
+}
+
+\ifdefined\optexversion
+  \load[minim-mp]
+\else
+  \input minim-mp
+\fi
+
+\directlua{
+require("minim-callbacks").register("wrapup_run", function() print("wrapup_run_2") end)
+luatexbase.remove_from_callback("wrapup_run", "1")
+luatexbase.add_to_callback("wrapup_run", function() print("wrapup_run_3") end, "3")
+}
+
+\bye
