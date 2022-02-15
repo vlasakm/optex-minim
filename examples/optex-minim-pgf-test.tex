@@ -124,6 +124,62 @@ a{\transparency{.5}b{\transparency{.2}c}b}a
 \draw [line width=1mm,opacity=.25] (current page.center) circle (3cm);
 \endtikzpicture
 
+% From PGF manual, section 15.10 "Doing Multiple Actions on a Path"
+\usetikzlibrary {fadings,patterns}
+\tikzpicture
+  [
+    % Define an interesting style
+      button/.style={
+      % First preaction: Fuzzy shadow
+      preaction={fill=black,path fading=circle with fuzzy edge 20 percent,
+                 opacity=.5,transform canvas={xshift=1mm,yshift=-1mm}},
+      % Second preaction: Background pattern
+      preaction={pattern=#1,
+                 path fading=circle with fuzzy edge 15 percent},
+      % Third preaction: Make background shiny
+      preaction={top color=white,
+                 bottom color=black!50,
+                 shading angle=45,
+                 path fading=circle with fuzzy edge 15 percent,
+                 opacity=0.2},
+      % Fourth preaction: Make edge especially shiny
+      preaction={path fading=fuzzy ring 15 percent,
+                 top color=black!5,
+                 bottom color=black!80,
+                 shading angle=45},
+      inner sep=2ex
+    },
+    button/.default=horizontal lines light blue,
+    circle
+  ]
+
+\draw [help lines] (0,0) grid (4,3);
+
+\node [button] at (2.2,1) {\typosize[24.88/] Big};
+\node [button=crosshatch dots light steel blue,
+       text=white] at (1,1.5) {Small};
+\endtikzpicture
+
+
+% From PGF manual, section 23.4.1 "Creating Fadings"
+{\loggingall
+\tikzfadingfrompicture[name=fade right with circle]
+  \shade[left color=transparent!0,
+         right color=transparent!100] (0,0) rectangle (2,2);
+  \fill[transparent!50] (1,1) circle (0.7);
+\endtikzfadingfrompicture
+}
+
+% Now we use the fading in another picture:
+\tikzpicture
+  % Background
+  \fill [black!20] (-1.2,-1.2) rectangle (1.2,1.2);
+  \pattern [pattern=checkerboard,pattern color=black!30]
+                   (-1.2,-1.2) rectangle (1.2,1.2);
+
+  \fill [path fading=fade right with circle,red] (-1,-1) rectangle (1,1);
+\endtikzpicture
+
 \directmetapost{
 % define the pattern
 picture letter; letter = maketext("a");
