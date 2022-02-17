@@ -1,13 +1,15 @@
 \fontfam[lm]
 \load[minim-mp]
 
+\font\mpfont=file:LiberationSans-Regular.ttf
+
 \directmetapost{%
 beginfig(1)
 picture q;
 path p;
 interim ahlength := 12bp;
 interim ahangle := 25;
-q := glyph "Dcaron" of "_tenrm" scaled 50;
+q := glyph "Dcaron" of "mpfont" scaled 50;
 for item within q:
   p := pathpart item;
   drawarrow p withcolor (.6,.9,.6)
