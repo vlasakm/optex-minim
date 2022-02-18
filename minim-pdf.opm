@@ -14,6 +14,35 @@
 \_load[minim]
 
 \_catcode`\@=11
+\_catcode`\:=11
+
+   \_doc
+   Minim hooks into language mechanism with standard \eTeX/
+   `\uselanguage@hook`. It can then translate language names (e.g
+   \"SwissGerman") into BCP 47 language identifiers (e.g. \"de-ch-1901", the
+   naming scheme of the `hyph-utf8` package) which are then embedded into
+   tagged PDFs. For simplicity, we use what \OpTeX/ calls \"lang-tag" (e.g.
+   \"de") which may not be precise enough (i.e. the right thing for Swiss
+   German would be \"de-ch") and may even be wrong(?).
+
+   When e.g. `\gswlang` (Swiss German) is used, `\uselang{gsw}\_gswPatt<...>`
+   is called in \OpTeX/. We use the fact, the there is mapping from language
+   register numbers (`\_gswPatt`) to \"lang-tag"s (\"de"). To avoid confusion
+   with any other language mappings, we prefix what we give to minim with `o:`.
+
+   We also don't incorporate the \eTeX/ `\uselanguage@hook`, but call minim's
+   callback directly, maybe it will cause less trouble with other packages
+   (since we don't pass standard names to the callback) and also gives a better
+   idea of what happens.
+   \_cod
+
+\_let\.uselang=\_uselang
+\_def\_uselang#1#2#3#4{%
+   \.uselang{#1}{#2}{#3}{#4}%
+   % just set this everytime, doesn't hurt
+   \setlanguagecode{o:#1}{\_cs{_lan:\_the#2}}%
+   \minim:uselanguagecallback{o:#1}%
+}
 
    \_doc
    If not detected, a few \"dummy" languages would be (in erroneous ways)
@@ -35,12 +64,10 @@
 \_let\lang@uncoded=\_tmp
 \_let\lang@undetermined=\_tmp
 
-% OpTeX doesn't use language numbers up until 100, so we start at
-% 20 (leave a few for temporary assignments, like usual)
-\_preplang nohyph       nohyph       {} 1 11
-\_preplang nolang       nolang       {} 2 11
-\_preplang uncoded      uncoded      {} 3 11
-\_preplang undetermined undetermined {} 4 11
+\_preplang nohyph       nohyph       und {} 11
+\_preplang nolang       nolang       und {} 11
+\_preplang uncoded      uncoded      und {} 11
+\_preplang undetermined undetermined und {} 11
 
    \_doc
    Now we actually load `minim-pdf`.
@@ -64,6 +91,7 @@
 
 % set the current language again to let minim know what it is
 \_cs{\_cs{_lan:\_the\_language}lang}
+
 
 % catcodes changes don't propage, since this file is loaded with \opinput
 \_endnamespace
