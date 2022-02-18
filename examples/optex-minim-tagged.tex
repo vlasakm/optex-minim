@@ -1,0 +1,41 @@
+\fontfam[lm]
+
+\gswlang
+
+\load[minim-pdf]
+\load[minim-mp]
+
+\pdfalevel 2a
+\writedocumentstructure=1
+
+\setdocumentlanguage czech
+
+\embedfile file {\jobname.tex} desc {Source code}
+
+\startelement{H1}
+\sec Sekce
+\stopelement{H1}
+
+\startelement{Sect}
+
+Odstavec sekce 1.
+
+Odstavec sekce 2.
+
+\stopelement{Sect}
+
+\nohyphlang
+
+\startelement{H1}
+\sec Sekce
+\stopelement{H1}
+
+\startelement{Sect}
+
+Odstavec sekce 1.
+
+Odstavec sekce 2.
+
+\stopelement{Sect}
+
+\bye
