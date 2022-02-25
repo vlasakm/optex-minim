@@ -97,74 +97,6 @@
 }
 
    \_doc
-   Callbackwise, although minim's approach is simpler, it has a fatal flaw --
-   there isn't real support for removing functions from callbacks. Of course,
-   the individual functions could have some switches to turn them off, but the
-   problem is that the callbacks should have their implicit behaviour when no
-   callback is registered. That is why we have to keep \OpTeX/'s higher level
-   interface, and just implement minim on top.
-
-   We do this by hiding the `luatexbase` namespace temporarily (so that minim
-   doesn't take it into account) and replacing the \LuaTeX/ functions by
-   proxies that call the \OpTeX/ mechanism.
-
-   Minim reexports theses three functions, so they should be reasonably
-   functional. Though currently, there are a couple of exceptions:
-
-   \begitems
-   * Replacing a registered function removes the old function and adds a new
-   one. This can mess with the order of functions, which may or may not be
-   fine, but there isn't any high level interface for actually deciding the
-   order of functions anyways, so it will have to do.
-
-   * `list` returns only those callbacks that are currently registered by
-   minim. This is fine for the current use by minim (which just saves all
-   registered callbacks when it is loaded, initializes its mechanism and
-   reinserts the callbacks with its functions), but may not be for general use.
-
-   * Disabling callbacks is not supported at all. This is also case in \OpTeX/
-   so unless need arises this should be fine.
-   \enditems
-   \_cod
-
-\directlua{
-    local lb = luatexbase
-    luatexbase = nil
-    local registered = {}
-    function callback.register(cb, fn)
-        if fn == false then % disable the callback
-            % not supported
-        elseif fn == nil then % disable the anonymous function
-            registered[cb] = nil
-            lb.remove_from_callback(cb, "minim")
-        else % register the anonymous function
-            if registered[cb] then
-                % already registered, to replace remove the old
-                lb.remove_from_callback(cb, "minim")
-            end
-            registered[cb] = fn
-            lb.add_to_callback(cb, fn, "minim")
-        end
-    end
-
-    % should return list of all callbacks, but we don't have access to that
-    function callback.list(cb, fn)
-        % return copy of the list
-        local t = {}
-        for k, _ in ipairs(registered) do
-            t[k] = true
-        end
-        return t
-    end
-
-    function callback.find(cb, fn)
-        return registered[cb]
-    end
-
-    callback.luatexbase = lb
-}
-
-   \_doc
    The preparations are over. We load `minim-alloc.tex`.
    \_cod
 
@@ -197,9 +129,6 @@
    \_cod
 
 \directlua{
-    luatexbase = callback.luatexbase
-    callback.luatexbase = nil
-
     local minimalloc = require("minim-alloc")
 
     define_lua_command = minimalloc.luadef
