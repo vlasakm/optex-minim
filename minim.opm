@@ -88,12 +88,8 @@
 
 \directlua{
     local function_table = lua.get_functions_table()
-    local i = 1
-    while function_table[i] ~= nil do
-        i = i + 1
-    end
-    % minim allocates at count + 1 for "new" allocators
-    tex.setcount("global", "e@alloc@luafunction@count", i - 1)
+    % minim allocates at count + 1 for "new" allocators, so this works
+    tex.setcount("global", "e@alloc@luafunction@count", \csstring\#function_table)
 }
 
    \_doc
