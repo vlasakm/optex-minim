@@ -8,11 +8,10 @@
 
    \_doc
    When we want to use minim with \OpTeX/, we need to accomodate for their
-   differences in allocations and callbacks. This package tries to do that in a
-   way that works, but is not necessarily the nicest -- this are really core
-   routines we are talking about, and both formats have their own ways, which
-   in certain parts (don't) try to keep backwards compatibility with older
-   \TeX/ formats.
+   differences. Particularly in allocations. Because of Esger Renkema's
+   graciousness, minim has been modified in ways that make it easier to
+   integrate with \OpTeX/. So even when the two formats normally disagree on a
+   lot of core things (allocations, callbacks) they can end up working together.
 
    \OpTeX/ defines most allocation macros in `alloc.opm` and some Lua
    allocation functions in `optex.lua`. Minim \"packages" are not standalone,
@@ -25,9 +24,12 @@
    for a single callback, by chaining their calls and `callback.register()`ing
    only a proxy function. While minim stays close to the `callback` interface
    from \LuaTeX/, \OpTeX/ is a subset of the \LaTeX/ `luatexbase` interface.
+   But minim now can work on top of ltluatex by using its functions instead of
+   `callback.register()`, so we don't have to do anything to support it in
+   \OpTeX/!
 
-   Because we only change what is defined by others, we actually need a dummy
-   macro for `\_codedecl`.
+   Firstly, because we only change what is defined by others, we actually need
+   a dummy macro for `\_codedecl`, to prevent loading this file more than once.
    \_cod
 
 \_catcode`\@=11
@@ -39,9 +41,8 @@
 
    \begitems
    * Knuth allocators from `plain.tex` (like `\newcount`). These are already
-   defined by \OpTeX/ (except for `\newlanguage`, which doesn't concern us).
-   Although minim itself sets the old `\allocationnumber` counter, which is not
-   even defined in \OpTeX/.
+   defined by \OpTeX/. Although minim itself sets the old `\allocationnumber`
+   counter, which is not even defined in \OpTeX/.
 
    * Global allocators from `etex.src` (like `\globcount`). These are not
    defined by \OpTeX/, since they no longer make sense (\LuaTeX/ doesn't use
@@ -52,7 +53,7 @@
    * Local allocators from `etex.src` (like `\loccount`). Concept of local
    allocators is completely missing in \OpTeX/. The semantics of local
    allocation in Lua is weird too, so we try to avoid these, since minim also
-   doesn't use them.
+   doesn't define their Lua variants.
 
    * \LuaTeX/ allocators from `ltluatex.tex` (like `\newattribute`). Subset of
    these is in \OpTeX/ (only atributes, which are also allocatable in Lua, and
@@ -93,6 +94,14 @@
 }
 
    \_doc
+   We also get PDF resources out of the way now. Minim is ready to use \OpTeX's
+   PDF resource management, but also has compatibility layer for PGF, which is
+   not needed in \OpTeX/. We prevent loading the problematic \TeX/ file.
+   \_cod
+
+\_let\minimpdfresourcesloaded=\_empty
+
+   \_doc
    The preparations are over. We load `minim-alloc.tex`.
    \_cod
 
@@ -112,16 +121,16 @@
 
    \_doc
    By now, the Knuthian allocators are dealt with. \eTeX/ global and local
-   allocators are still undefined, but are expected in minim's Lua code with
-   their hardcoded counter register numbers. This is unacceptable, since in
-   this range (`\count260` to `\count276`) \OpTeX/ has already made
+   allocators are undefined, but the global ones are expected in minim's Lua
+   code with their hardcoded counter register numbers. This is unacceptable,
+   since in this range (`\count260` to `\count266`) \OpTeX/ has already made
    allocations. Thus we need to replace these Lua functions with similar
    definitions. For some, \OpTeX/ also has a different idea whether the counter
    represent the last or next allocated register number, so we correct that as
    well.
 
    We also don't forget to actually set `define_lua_command` to be minim's
-   `luadef` and to restore the `luatexbase` namespace.
+   `luadef`.
    \_cod
 
 \directlua{
@@ -175,14 +184,6 @@
 
 \_catcode`\:=11
 \_let\_shipout\minim:shipout:new
-
-   \_doc
-   We also get PDF resources out of the way now. Minim is ready to use \OpTeX's
-   PDF resource management, but also has compatibility layer for PGF, which is
-   not needed in \OpTeX. We prevent loading the problematic \TeX/ file.
-   \_cod
-
-\_let\minimpdfresourcesloaded=\_empty
 
 % catcodes changes don't propage, since this file is loaded with \opinput
 \_endcode
