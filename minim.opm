@@ -180,5 +180,13 @@
 \_catcode`\:=11
 \_let\_shipout\minim:shipout:new
 
+   \_doc
+   We also get PDF resources out of the way now. Minim is ready to use \OpTeX's
+   PDF resource management, but also has compatibility layer for PGF, which is
+   not needed in \OpTeX. We prevent loading the problematic \TeX/ file.
+   \_cod
+
+\_let\minimpdfresourcesloaded=\_empty
+
 % catcodes changes don't propage, since this file is loaded with \opinput
 \_endcode
