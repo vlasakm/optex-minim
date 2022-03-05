@@ -1,6 +1,6 @@
 % optex-minim package
 % Michal Vlasák <lahcim8@gmail.com>
-% https://github.com/vlasakm/pdfextra
+% https://github.com/vlasakm/optex-minim
 % Zero-Clause BSD license
 
 \_codedecl \_optexminimmp_used {Minim-PDF for \OpTeX/}
