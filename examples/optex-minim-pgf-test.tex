@@ -1,4 +1,5 @@
 \fontfam[lm]
+%\loggingall
 \load[tikz]
 \load[minim-mp]
 
@@ -67,29 +68,6 @@ end
 }
 
 
-\newattribute \transpattr
-\newcount \transpcnt \transpcnt=1 % allocations start at 1
-\def\transparency#1{\inittransparency \transpattr=
-   \ifcsname transp::#1\endcsname \lastnamedcs\relax \else
-      \transpcnt
-      \sxdef{transp::#1}{\the\transpcnt}%
-      \sxdef{transp:\the\transpcnt}{/Tr\the\transpcnt\space gs}%
-      \addextgstate{Tr\the\transpcnt}{<</ca #1 /CA #1>>}%
-      \incr \transpcnt
-   \fi
-}
-\addto\_resetcolor{\transpattr=-"7FFFFFFF }
-% Transparency of "1" is the default
-\sdef{transp::1}{0}
-\sdef{transp:0}{/Tr0 gs}
-\def\inittransparency{%
-   \addextgstate{Tr0}{<</ca 1 /CA 1>>}%
-   \glet\inittransparency=\relax
-}
-\directlua{
-register_pre_shipout_injector("transp", registernumber("transpattr"), "transp:")
-}
-
 \newattribute \fntoutattr
 \newcount \fntoutcnt \fntoutcnt=1 % allocations start at 1
 \def\outlinefont#1{\fntoutattr=
@@ -100,13 +78,13 @@ register_pre_shipout_injector("transp", registernumber("transpattr"), "transp:")
       \incr \fntoutcnt
    \fi
 }
-\addto\_resetcolor{\fntoutattr=-"7FFFFFFF }
+\addto\_resetattrs{\fntoutattr=\_noattr}
 \sdef{fntout:0}{0 w 0 Tr}
 \directlua{
-register_pre_shipout_injector("fntout", registernumber("fntoutattr"), "fntout:")
+register_pre_shipout_injector("fntout", "fntoutattr", "fntout:")
 }
 
-a{\transparency{.5}b{\transparency{.2}c}b}a
+a{\transparency128 b{\transparency200 c}b}a
 
 {\Red a{A\outlinefont{.1}B\pdfliteral{0 1 0 RG}\outlinefont{.3}B}a}
 
