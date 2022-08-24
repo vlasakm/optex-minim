@@ -22,7 +22,7 @@ z0 = (0, 0);
 z1 = (5cm, 5cm);
 z2 = (10cm, 0);
 pen p; p := makepen((-.5,-.5)--(.5,-.5)--(1,.5)--(0,.5)--cycle);
-p := pencircle xscaled 10pt yscaled 5pt;
+%p := pencircle xscaled 10pt yscaled 5pt;
 draw (z0 -- z1 -- z2) withpen p shifted (0, -3cm) withcolor red;
 draw (z0 -- z1 -- z2 -- z0) withpen p shifted (0, -10cm);
 fill (z0 -- z1 -- z2 -- cycle) withpen p shifted (0, -17cm);
