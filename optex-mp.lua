@@ -204,7 +204,7 @@ local function canvas_add_mp_objects(ctx, objects)
                     fill(ctx)
                 end
                 if htap then
-                    mp_path(ctx, path)
+                    mp_path(ctx, htap)
                     fill(ctx)
                 end
             end
